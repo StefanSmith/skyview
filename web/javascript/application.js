@@ -20,7 +20,8 @@ $(function () {
     function init() {
         var celestialSphere, celestialSphereMaterial;
         var celestialSphereMesh, celestialEquator, equatorLine;
-        
+        var coneMesh;
+
         camera = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -2000, 1000);
         camera.position.z = 500;
         camera.position.y = 100;
@@ -36,7 +37,7 @@ $(function () {
 
         var celestialRadius = 300;
         celestialSphere = new THREE.SphereGeometry(celestialRadius, 50, 50);
-        celestialSphereMaterial = new THREE.MeshNormalMaterial({ transparent: true, opacity: 0, color: 0xCC0000 });
+        celestialSphereMaterial = new THREE.MeshNormalMaterial({ transparent: true, opacity: 0.0, wireframe: true, color: 0xCC0000 });
 
         celestialSphereMesh = new THREE.Mesh(celestialSphere, celestialSphereMaterial);
         universe.add(celestialSphereMesh);
@@ -48,32 +49,94 @@ $(function () {
         equatorLine.rotation.x = 90 * Math.PI / 180;
 
         universe.add(equatorLine);
-        var vernalEquinoxMaterial = new THREE.LineBasicMaterial({color: 0x000000, linewidth: 10});
+        var vernalEquinoxMaterial = new THREE.LineBasicMaterial({color: 0xFFFFFF, linewidth: 10});
+        universe.add(CreateLineFromOrigin(vernalEquinoxMaterial, celestialRadius, 0, 0));
 
         var particleBasicMaterial = new THREE.ParticleBasicMaterial({
             color: 0xFFFFFF,
             size: 10,
-            map: THREE.ImageUtils.loadTexture("./images/star.png"),
-            blending: THREE.AdditiveBlending,
-            transparent: true
+//            map: THREE.ImageUtils.loadTexture("./images/star.png"),
+//            blending: THREE.AdditiveBlending,
+//            transparent: true
         });
 
-        $.getJSON('./data/targets.json', function (targets) {
-            console.log(targets);
+        function drawTarget(target) {
+            var rightAscension = parseInt(target.rightAscension);
+            var declination = parseInt(target.declination);
+            var x = getX(celestialRadius, rightAscension, parseInt(declination));
+            var y = getY(celestialRadius, rightAscension, parseInt(declination));
+            var z = getZ(celestialRadius, rightAscension, parseInt(declination));
+            universe.add(CreateParticle(particleBasicMaterial, x, y, z));
+        }
 
+        $.getJSON('./data/targets.json', function (targets) {
             _.each(_.keys(targets), function (targetName) {
                 var target = targets[targetName];
-                var rightAscension = parseInt(target.rightAscension);
-                var declination = parseInt(target.declination);
-
-                console.log('Drawing ' + targetName + ': ' + rightAscension + ', ' + declination);
-
-                var x = getX(celestialRadius, rightAscension, parseInt(declination));
-                var y = getY(celestialRadius, rightAscension, parseInt(declination));
-                var z = getZ(celestialRadius, rightAscension, parseInt(declination));
-                console.log('Drawing ' + x + ',' + y + ',' + z);
-                universe.add(CreateParticle(particleBasicMaterial, x, y, z));
+                drawTarget(target);
             });
+        });
+
+        function initializeCone() {
+            var coneGeometry = new THREE.CylinderGeometry(0, 10, -celestialRadius, 50, 50, false);
+            coneGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(0, celestialRadius / 2, 0))
+
+            coneMesh = new THREE.Mesh(coneGeometry, new THREE.MeshNormalMaterial({ color: 0xFFFFFF }));
+            coneMesh.overdraw = true;
+            universe.add(coneMesh);
+        }
+
+        function updateCone(observation) {
+            var rightAscension = observation.rightAscension;
+            var declination = observation.declination;
+
+//            drawTarget(observation);
+
+            var coneCentreRadius = celestialRadius / 2;
+            var x = getX(coneCentreRadius, rightAscension, declination);
+            var y = getY(coneCentreRadius, rightAscension, declination);
+            var z = getZ(coneCentreRadius, rightAscension, declination);
+
+            console.log('Drawing cone with: (right ascension: ' + rightAscension + ', declination: ' + declination + ')');
+
+            if (_.isUndefined(coneMesh)) {
+                initializeCone();
+            }
+
+            var zRotation = -Math.PI / 180 * (90 - declination);
+            coneMesh.rotation.z = zRotation;
+            console.log('Rotating on z: ' + zRotation * 180 / Math.PI);
+//            coneGeometry.applyMatrix(new THREE.Matrix4().makeRotationZ(zRotation));
+            var yRotation = Math.PI / 180 * (rightAscension);
+            coneMesh.rotation.y = yRotation;
+//            console.log('Rotating on y: ' + yRotation * 180 / Math.PI);
+//            coneGeometry.applyMatrix(new THREE.Matrix4().makeRotationY(yRotation));
+        }
+
+        $.getJSON('./data/observations.json', function (observations) {
+            var sortedObservations = _.chain(observations).keys().sortBy(function (startDate) {
+                return startDate;
+            });
+
+            var firstObservationStartTime = sortedObservations.first().value();
+            var lastObservationStartTime = sortedObservations.last().value();
+
+            $("#slider").slider({
+                step: 86400,
+                min: parseInt(firstObservationStartTime),
+                max: parseInt(lastObservationStartTime),
+                change: function (event, ui) {
+                    var currentSecondsSinceEpoch = ui.value;
+                    var observation = _.find(observations, function (observation, startTime) {
+                        return startTime <= parseInt(currentSecondsSinceEpoch) && observation.endTime >= parseInt(currentSecondsSinceEpoch);
+                    });
+
+                    if (!_.isUndefined(observation)) {
+                        updateCone(observation);
+                    }
+                }
+            });
+
+            updateCone(observations[firstObservationStartTime]);
         });
 
         scene.add(universe);
