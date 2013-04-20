@@ -1,6 +1,9 @@
+var camera, scene, renderer;
+var celestialSphere, celestialSphereMaterial;
+var celestialSphereMesh,celestialEquator, equatorLine;
+
 $(function () {
-    var camera, scene, renderer;
-    var geometry, material, mesh;
+
 
     init();
     animate();
@@ -8,32 +11,30 @@ $(function () {
     function init() {
 
         camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
-        camera.position.z = 1000;
+        camera.position.z = 500;
 
         scene = new THREE.Scene();
 
-        geometry = new THREE.SphereGeometry(200, 30, 30);
-        material = new THREE.MeshNormalMaterial({                transparent: false, opacity: 0.25, color: 0xCC0000            });
-//        material = new THREE.MeshLambertMaterial({                color: 0xCC0000            });
-//        material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
+        var universe = new THREE.Object3D();
+        celestialSphere = new THREE.SphereGeometry(200, 30, 30);
+        celestialSphereMaterial = new THREE.MeshNormalMaterial({ transparent: false, opacity: 0.25, color: 0xCC0000 });
 
-        mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
+        celestialSphereMesh = new THREE.Mesh(celestialSphere, celestialSphereMaterial);
+        universe.add(celestialSphereMesh);
+//        scene.add(celestialSphereMesh);
 
-        var geometry2 = new THREE.SphereGeometry(100, 30, 30);
-        var material2 = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
+        celestialEquator = new THREE.CircleGeometry(200, 30);
+        celestialEquator.vertices.splice(0,1);
+        equatorLine = new THREE.Line(celestialEquator, new THREE.LineBasicMaterial({color: 0x000000}));
 
-        var mesh2 = new THREE.Mesh(geometry2, material2);
-        scene.add(mesh2);
+        universe.add(equatorLine);
 
-        var celestialEquator = new THREE.CircleGeometry(500, 30);
-        var equatorMesh = new THREE.Mesh(celestialEquator, material2);
+//        equatorMesh.rotation.x = 85* Math.PI/180;
 
-        celestialEquator.rotation = 25* Math.PI/180;
+        universe.rotation.x = 85* Math.PI/180;
 
-
-
-        scene.add(equatorMesh);
+//        scene.add(equatorMesh);
+        scene.add(universe);
 
         renderer = new THREE.CanvasRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
