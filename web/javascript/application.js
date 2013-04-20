@@ -31,26 +31,40 @@ $(function () {
         scene = new THREE.Scene();
 
         var universe = new THREE.Object3D();
-        celestialSphere = new THREE.SphereGeometry(200, 50, 50);
-        celestialSphereMaterial = new THREE.MeshNormalMaterial({ transparent: false, opacity: 0.75, color: 0xCC0000 });
+
+        var earthSphere = new THREE.SphereGeometry(10, 50, 50);
+        var earthSphereMaterial = new THREE.MeshNormalMaterial({ color: 0x3333FF });
+        var earthSphereMesh = new THREE.Mesh(earthSphere, earthSphereMaterial);
+        universe.add(earthSphereMesh);
+
+        var celestialRadius = 300;
+        celestialSphere = new THREE.SphereGeometry(celestialRadius, 50, 50);
+        celestialSphereMaterial = new THREE.MeshNormalMaterial({ transparent: true, opacity: 0, color: 0xCC0000 });
 
         celestialSphereMesh = new THREE.Mesh(celestialSphere, celestialSphereMaterial);
         universe.add(celestialSphereMesh);
 //        scene.add(celestialSphereMesh);
 
-        celestialEquator = new THREE.CircleGeometry(200, 30);
+        celestialEquator = new THREE.CircleGeometry(celestialRadius, 30);
         celestialEquator.vertices.splice(0, 1);
-        var lineBasicMaterial = new THREE.LineBasicMaterial({color: 0x000000, linewidth: 5});
+        var lineBasicMaterial = new THREE.LineBasicMaterial({color: 0xFFFFFF, linewidth: 5});
         equatorLine = new THREE.Line(celestialEquator, lineBasicMaterial);
         equatorLine.rotation.x = 90 * Math.PI / 180;
 
         universe.add(equatorLine);
         var vernalEquinoxMaterial = new THREE.LineBasicMaterial({color: 0x000000, linewidth: 10});
 
-        var particleBasicMaterial = new THREE.ParticleBasicMaterial({size: 5, color: 0x000000});
+//        var particleBasicMaterial = new THREE.ParticleBasicMaterial({size: 5, color: 0x000000});
+        var particleBasicMaterial = new THREE.ParticleBasicMaterial({
+            color: 0xFFFFFF,
+            size: 10,
+            map: THREE.ImageUtils.loadTexture("./images/star.png"),
+            blending: THREE.AdditiveBlending,
+            transparent: true
+        });
 //        universe.add(CreateParticle(particleBasicMaterial, getX(200, 20, 45), getY(200, 20, 45), getZ(200, 20, 45)));
 //        universe.add(CreateParticle(particleBasicMaterial, getX(200, 0, 45), getY(200, 0, 45), getZ(200, 0, 45)));
-        universe.add(CreateLineFromOrigin(vernalEquinoxMaterial, getX(200, 0, 0), getY(200, 0, 0), getZ(200, 0, 0)));
+//        universe.add(CreateLineFromOrigin(vernalEquinoxMaterial, getX(200, 0, 0), getY(200, 0, 0), getZ(200, 0, 0)));
 
         $.getJSON('./data/targets.json', function (targets) {
             console.log(targets);
@@ -62,9 +76,9 @@ $(function () {
 
                 console.log('Drawing ' + targetName + ': ' + rightAscension + ', ' + declination);
 
-                var x = getX(200, rightAscension, parseInt(declination));
-                var y = getY(200, rightAscension, parseInt(declination));
-                var z = getZ(200, rightAscension, parseInt(declination));
+                var x = getX(celestialRadius, rightAscension, parseInt(declination));
+                var y = getY(celestialRadius, rightAscension, parseInt(declination));
+                var z = getZ(celestialRadius, rightAscension, parseInt(declination));
                 console.log('Drawing ' + x + ',' + y + ',' + z);
                 universe.add(CreateParticle(particleBasicMaterial, x, y, z));
             });
