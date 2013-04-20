@@ -1,9 +1,5 @@
-var camera, scene, renderer;
-var celestialSphere, celestialSphereMaterial;
-var celestialSphereMesh, celestialEquator, equatorLine;
-
 $(function () {
-
+    var camera, scene, renderer;
 
     init();
     animate();
@@ -22,8 +18,9 @@ $(function () {
     }
 
     function init() {
-
-//        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
+        var celestialSphere, celestialSphereMaterial;
+        var celestialSphereMesh, celestialEquator, equatorLine;
+        
         camera = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -2000, 1000);
         camera.position.z = 500;
         camera.position.y = 100;
@@ -43,7 +40,6 @@ $(function () {
 
         celestialSphereMesh = new THREE.Mesh(celestialSphere, celestialSphereMaterial);
         universe.add(celestialSphereMesh);
-//        scene.add(celestialSphereMesh);
 
         celestialEquator = new THREE.CircleGeometry(celestialRadius, 30);
         celestialEquator.vertices.splice(0, 1);
@@ -54,7 +50,6 @@ $(function () {
         universe.add(equatorLine);
         var vernalEquinoxMaterial = new THREE.LineBasicMaterial({color: 0x000000, linewidth: 10});
 
-//        var particleBasicMaterial = new THREE.ParticleBasicMaterial({size: 5, color: 0x000000});
         var particleBasicMaterial = new THREE.ParticleBasicMaterial({
             color: 0xFFFFFF,
             size: 10,
@@ -62,9 +57,6 @@ $(function () {
             blending: THREE.AdditiveBlending,
             transparent: true
         });
-//        universe.add(CreateParticle(particleBasicMaterial, getX(200, 20, 45), getY(200, 20, 45), getZ(200, 20, 45)));
-//        universe.add(CreateParticle(particleBasicMaterial, getX(200, 0, 45), getY(200, 0, 45), getZ(200, 0, 45)));
-//        universe.add(CreateLineFromOrigin(vernalEquinoxMaterial, getX(200, 0, 0), getY(200, 0, 0), getZ(200, 0, 0)));
 
         $.getJSON('./data/targets.json', function (targets) {
             console.log(targets);
@@ -84,22 +76,6 @@ $(function () {
             });
         });
 
-
-//        universe.add(CreateParticle(particleBasicMaterial, getX(200, 45, 0), getY(200, 45, 0), getZ(200, 45, 0)));
-//        universe.add(CreateParticle(particleBasicMaterial, getX(200, 0, 45), getY(200, 0, 45), getZ(200, 0, 45)));
-//        universe.add(CreateParticle(particleBasicMaterial, getX(200, 45, 45), getY(200, 45, 45), getZ(200, 45, 45)));
-
-//        universe.add(CreateLineFromOrigin(lineBasicMaterial, 200, 0, 0));
-//        universe.add(CreateLineFromOrigin(lineBasicMaterial, 0, 200, 0));
-//        universe.add(CreateLineFromOrigin(lineBasicMaterial, 0, 0, 200));
-
-//        universe.add(CreateLineFromOrigin(lineBasicMaterial, getX(200, 0, -45), getY(200, 0, -45), getZ(200, 0, -45)));
-//        universe.add(CreateParticle(particleBasicMaterial, 0, 0, 100));
-
-
-//        universe.rotation.x = 85 * Math.PI / 180;
-
-//        scene.add(equatorMesh);
         scene.add(universe);
 
         renderer = new THREE.CanvasRenderer();
@@ -132,9 +108,6 @@ $(function () {
 
         camera.position.x = Math.floor(Math.cos(timer) * 200);
         camera.position.z = Math.floor(Math.sin(timer) * 200);
-//
-//        mesh.rotation.x += 0.01;
-//        mesh.rotation.y += 0.02;
 
         renderer.render(scene, camera);
 
