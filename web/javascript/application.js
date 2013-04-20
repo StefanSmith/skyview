@@ -47,13 +47,33 @@ $(function () {
         universe.add(equatorLine);
         var vernalEquinoxMaterial = new THREE.LineBasicMaterial({color: 0x000000, linewidth: 10});
 
-        var particleBasicMaterial = new THREE.ParticleBasicMaterial({size: 100, color: 0x000000});
+        var particleBasicMaterial = new THREE.ParticleBasicMaterial({size: 5, color: 0x000000});
 //        universe.add(CreateParticle(particleBasicMaterial, getX(200, 20, 45), getY(200, 20, 45), getZ(200, 20, 45)));
 //        universe.add(CreateParticle(particleBasicMaterial, getX(200, 0, 45), getY(200, 0, 45), getZ(200, 0, 45)));
         universe.add(CreateLineFromOrigin(vernalEquinoxMaterial, getX(200, 0, 0), getY(200, 0, 0), getZ(200, 0, 0)));
-        universe.add(CreateLineFromOrigin(lineBasicMaterial, getX(200, 45, 0), getY(200, 45, 0), getZ(200, 45, 0)));
-        universe.add(CreateLineFromOrigin(lineBasicMaterial, getX(200, 0, 45), getY(200, 0, 45), getZ(200, 0, 45)));
-        universe.add(CreateLineFromOrigin(lineBasicMaterial, getX(200, 45, 45), getY(200, 45, 45), getZ(200, 45, 45)));
+
+        $.getJSON('./data/targets.json', function (targets) {
+            console.log(targets);
+
+            _.each(_.keys(targets), function (targetName) {
+                var target = targets[targetName];
+                var rightAscension = parseInt(target.rightAscension);
+                var declination = parseInt(target.declination);
+
+                console.log('Drawing ' + targetName + ': ' + rightAscension + ', ' + declination);
+
+                var x = getX(200, rightAscension, parseInt(declination));
+                var y = getY(200, rightAscension, parseInt(declination));
+                var z = getZ(200, rightAscension, parseInt(declination));
+                console.log('Drawing ' + x + ',' + y + ',' + z);
+                universe.add(CreateParticle(particleBasicMaterial, x, y, z));
+            });
+        });
+
+
+//        universe.add(CreateParticle(particleBasicMaterial, getX(200, 45, 0), getY(200, 45, 0), getZ(200, 45, 0)));
+//        universe.add(CreateParticle(particleBasicMaterial, getX(200, 0, 45), getY(200, 0, 45), getZ(200, 0, 45)));
+//        universe.add(CreateParticle(particleBasicMaterial, getX(200, 45, 45), getY(200, 45, 45), getZ(200, 45, 45)));
 
 //        universe.add(CreateLineFromOrigin(lineBasicMaterial, 200, 0, 0));
 //        universe.add(CreateLineFromOrigin(lineBasicMaterial, 0, 200, 0));
