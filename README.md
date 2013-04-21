@@ -1,3 +1,3 @@
 skyview
 =======
-See deployed website at http://gmotta.github.io/web/index.html
+See deployed website at http://stefansmith.github.io/skyview/
