@@ -1,88 +1,117 @@
+var CELESTIAL_RADIUS = 300;
+
 $(function () {
-    var camera, scene, renderer, rotationPaused;
+    var camera, scene, renderer, rotationPaused, renderingPaused;
 
     rotationPaused = false;
-
+    renderingPaused = false;
 
     init();
     animate();
 
-    function CreateParticle(particleBasicMaterial, x, y, z) {
+    function createParticle(particleBasicMaterial, x, y, z) {
         var particle = new THREE.Particle(particleBasicMaterial);
         particle.position.set(x, y, z);
+
         return particle;
     }
 
-    function CreateLineFromOrigin(material, x, y, z) {
+    function createLineFromOrigin(x, y, z, material) {
         var geometry = new THREE.Geometry();
         geometry.vertices.push(new THREE.Vector3(0, 0, 0));
         geometry.vertices.push(new THREE.Vector3(x, y, z));
+
         return new THREE.Line(geometry, material);
     }
 
+    function createEarth() {
+        var sphereGeometry = new THREE.SphereGeometry(10, 50, 50);
+        return new THREE.Mesh(sphereGeometry, new THREE.MeshNormalMaterial({ color: 0x3333FF }));
+    }
+
+    function createCelestialSphere(celestialRadius) {
+        var sphereGeometry = new THREE.SphereGeometry(celestialRadius, 50, 50);
+        return new THREE.Mesh(sphereGeometry, new THREE.MeshNormalMaterial({ transparent: true, opacity: 0.0, wireframe: true, color: 0xCC0000 }));
+    }
+
+    function createEquator(celestialRadius) {
+        var circleGeometry = new THREE.CircleGeometry(celestialRadius, 30);
+        circleGeometry.vertices.splice(0, 1);
+
+        var equator = new THREE.Line(circleGeometry, new THREE.LineBasicMaterial({color: 0xFFFFFF, linewidth: 5}));
+        equator.rotation.x = 90 * Math.PI / 180;
+
+        return equator;
+    }
+
+    function createVernalEquinox() {
+        return createLineFromOrigin(CELESTIAL_RADIUS, 0, 0, new THREE.LineBasicMaterial({color: 0xFFFFFF, linewidth: 10}));
+    }
+
+    function createCelestialNorthPole() {
+        return createLineFromOrigin(0, CELESTIAL_RADIUS, 0, new THREE.LineBasicMaterial({color: 0xFFFFFF, linewidth: 10}));
+    }
+
+    function renderScene() {
+        if (renderingPaused)return;
+        renderer.render(scene, camera);
+    }
+
+    function pauseRendering(){
+        renderingPaused = true;
+    }
+
+    function resumeRendering(){
+        renderingPaused = false;
+        renderScene();
+    }
+
     function init() {
-        var celestialSphere, celestialSphereMaterial;
-        var celestialSphereMesh, celestialEquator, equatorLine;
         var coneMesh;
 
-        camera = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -2000, 1000);
+        camera = new THREE.OrthographicCamera(window.innerWidth / -4, window.innerWidth / 4, window.innerHeight / 2, window.innerHeight / -2, -2000, 1000);
         camera.position.y = 100;
 
         scene = new THREE.Scene();
 
         var universe = new THREE.Object3D();
 
-        var earthSphere = new THREE.SphereGeometry(10, 50, 50);
-        var earthSphereMaterial = new THREE.MeshNormalMaterial({ color: 0x3333FF });
-        var earthSphereMesh = new THREE.Mesh(earthSphere, earthSphereMaterial);
-        universe.add(earthSphereMesh);
-
-        var celestialRadius = 300;
-        celestialSphere = new THREE.SphereGeometry(celestialRadius, 50, 50);
-        celestialSphereMaterial = new THREE.MeshNormalMaterial({ transparent: true, opacity: 0.0, wireframe: true, color: 0xCC0000 });
-
-        celestialSphereMesh = new THREE.Mesh(celestialSphere, celestialSphereMaterial);
-        universe.add(celestialSphereMesh);
-
-        celestialEquator = new THREE.CircleGeometry(celestialRadius, 30);
-        celestialEquator.vertices.splice(0, 1);
-        var lineBasicMaterial = new THREE.LineBasicMaterial({color: 0xFFFFFF, linewidth: 5});
-        equatorLine = new THREE.Line(celestialEquator, lineBasicMaterial);
-        equatorLine.rotation.x = 90 * Math.PI / 180;
-
-        universe.add(equatorLine);
-        var vernalEquinoxMaterial = new THREE.LineBasicMaterial({color: 0xFFFFFF, linewidth: 10});
-        universe.add(CreateLineFromOrigin(vernalEquinoxMaterial, celestialRadius, 0, 0));
+        universe.add(createEarth());
+        universe.add(createCelestialSphere(CELESTIAL_RADIUS));
+        universe.add(createEquator(CELESTIAL_RADIUS));
+        universe.add(createVernalEquinox());
+        universe.add(createCelestialNorthPole());
 
         var particleBasicMaterial = new THREE.ParticleBasicMaterial({
             color: 0xFFFFFF,
-            size: 10,
-//            map: THREE.ImageUtils.loadTexture("./images/star.png"),
-//            blending: THREE.AdditiveBlending,
-//            transparent: true
+            size: 10
         });
 
         function drawTarget(target) {
             var rightAscension = parseInt(target.rightAscension);
             var declination = parseInt(target.declination);
-            var x = getX(celestialRadius, rightAscension, parseInt(declination));
-            var y = getY(celestialRadius, rightAscension, parseInt(declination));
-            var z = getZ(celestialRadius, rightAscension, parseInt(declination));
-            universe.add(CreateParticle(particleBasicMaterial, x, y, z));
+            var x = getX(CELESTIAL_RADIUS, rightAscension, parseInt(declination));
+            var y = getY(CELESTIAL_RADIUS, rightAscension, parseInt(declination));
+            var z = getZ(CELESTIAL_RADIUS, rightAscension, parseInt(declination));
+            universe.add(createParticle(particleBasicMaterial, x, y, z));
+
+            renderScene();
         }
 
         $.getJSON('./data/targets.json', function (targets) {
+            pauseRendering();
+
             _.each(_.keys(targets), function (targetName) {
                 var target = targets[targetName];
                 drawTarget(target);
             });
 
-            renderer.render(scene, camera);
+            resumeRendering();
         });
 
         function initializeCone() {
-            var coneGeometry = new THREE.CylinderGeometry(0, 10, -celestialRadius, 50, 50, false);
-            coneGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(0, celestialRadius / 2, 0))
+            var coneGeometry = new THREE.CylinderGeometry(0, 10, -CELESTIAL_RADIUS, 50, 50, false);
+            coneGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(0, CELESTIAL_RADIUS / 2, 0))
 
             coneMesh = new THREE.Mesh(coneGeometry, new THREE.MeshNormalMaterial({ color: 0xFFFFFF }));
             coneMesh.overdraw = true;
@@ -93,29 +122,19 @@ $(function () {
             var rightAscension = observation.rightAscension;
             var declination = observation.declination;
 
-//            drawTarget(observation);
-
-            var coneCentreRadius = celestialRadius / 2;
+            var coneCentreRadius = CELESTIAL_RADIUS / 2;
             var x = getX(coneCentreRadius, rightAscension, declination);
             var y = getY(coneCentreRadius, rightAscension, declination);
             var z = getZ(coneCentreRadius, rightAscension, declination);
-
-            console.log('Drawing cone with: (right ascension: ' + rightAscension + ', declination: ' + declination + ')');
 
             if (_.isUndefined(coneMesh)) {
                 initializeCone();
             }
 
-            var zRotation = -Math.PI / 180 * (90 - declination);
-            coneMesh.rotation.z = zRotation;
-            console.log('Rotating on z: ' + zRotation * 180 / Math.PI);
-//            coneGeometry.applyMatrix(new THREE.Matrix4().makeRotationZ(zRotation));
-            var yRotation = Math.PI / 180 * (rightAscension);
-            coneMesh.rotation.y = yRotation;
-//            console.log('Rotating on y: ' + yRotation * 180 / Math.PI);
-//            coneGeometry.applyMatrix(new THREE.Matrix4().makeRotationY(yRotation));
+            coneMesh.rotation.z = -Math.PI / 180 * (90 - declination);
+            coneMesh.rotation.y = Math.PI / 180 * (rightAscension);
 
-            renderer.render(scene, camera);
+            renderScene();
         }
 
         $.getJSON('./data/observations.json', function (observations) {
@@ -148,7 +167,7 @@ $(function () {
                         return startTime <= currentSecondsSinceEpoch && observation.endTime >= currentSecondsSinceEpoch;
                     });
 
-                    updateDisplayedObservationInformation( observation);
+                    updateDisplayedObservationInformation(observation);
 
                     if (!_.isUndefined(observation)) {
                         updateCone(observation);
@@ -164,9 +183,9 @@ $(function () {
         scene.add(universe);
 
         renderer = new THREE.CanvasRenderer();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(window.innerWidth / 2, window.innerHeight);
 
-        document.body.appendChild(renderer.domElement);
+        $('#visualization').append(renderer.domElement);
 
     }
 
@@ -180,7 +199,7 @@ $(function () {
 
     function updateDisplayedCurrentTime(currentSecondsSinceEpoch) {
         var date = moment.unix(currentSecondsSinceEpoch);
-        $('#currentTime').text(date.format('YYYY-MM-DD HH:mm'));
+        $('#currentTime').text(date.format('HH:mm D MMM YYYY'));
     }
 
     function getX(radius, theta, phi) {
@@ -195,27 +214,24 @@ $(function () {
         return -1 * radius * Math.sin(theta * Math.PI / 180) * Math.cos(phi * Math.PI / 180);
     }
 
-    var nextRotationIncrement = 0;
+    var nextRotationDegree = 0;
 
-    function getNextRotationIncrement() {
-        return nextRotationIncrement == 359 ? (nextRotationIncrement = 0) : (nextRotationIncrement = nextRotationIncrement + 1);
+    function getNextRotationDegree() {
+        return nextRotationDegree == 359 ? (nextRotationDegree = 0) : (nextRotationDegree = nextRotationDegree + 1);
     }
 
     function animate() {
-
-        // note: three.js includes requestAnimationFrame shim
         requestAnimationFrame(animate);
 
         if (rotationPaused) return;
 
         camera.lookAt(scene.position);
 
-        var timer = Math.PI / 180 * getNextRotationIncrement();
+        var timer = Math.PI / 180 * getNextRotationDegree();
 
         camera.position.x = Math.floor(Math.cos(timer) * 500);
         camera.position.z = Math.floor(Math.sin(timer) * 500);
 
-        renderer.render(scene, camera);
-
+        renderScene();
     }
 });

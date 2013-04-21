@@ -1,29 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>3D Javascript Spike</title>
+    <title>Skyview</title>
     <link rel="stylesheet" href="./css/styles.css"/>
     <link rel="stylesheet" href="./css/ui-lightness/jquery-ui-1.10.2.custom.min.css"/>
 </head>
 <body>
-<div id="slider"></div>
-<div id="currentTime"></div>
-<dl>
-    <dt>Observer</dt>
-    <dd>SWIFT</dd>
-    <dt>Target</dt>
-    <dd id="target"></dd>
-    <dt>Revolution</dt>
-    <dd id="revolution"></dd>
-    <dt class="starts-new-line">RA</dt>
-    <dd id="rightAscension"></dd>
-    <dt>Declination</dt>
-    <dd id="declination"></dd>
-    <dt>Start Time</dt>
-    <dd id="startTime"></dd>
-    <dt>End Time</dt>
-    <dd id="endTime"></dd>
-</dl>
+<div id="visualization"></div>
+<div id="control-panel">
+    <div id="currentTime"></div>
+    <div id="slider"></div>
+    <dl id="satellite-details">
+        <dt>Observer</dt>
+        <dd>SWIFT</dd>
+        <dt>Revolution</dt>
+        <dd id="revolution"></dd>
+        <dt>Start Time</dt>
+        <dd id="startTime"></dd>
+        <dt>End Time</dt>
+        <dd id="endTime"></dd>
+    </dl>
+    <dl id="target-details">
+        <dt>Target</dt>
+        <dd id="target"></dd>
+        <dt>RA</dt>
+        <dd id="rightAscension"></dd>
+        <dt>Declination</dt>
+        <dd id="declination"></dd>
+    </dl>
+</div>
 <script src="./javascript/lib/underscore-min.js"></script>
 <script src="./javascript/lib/moment.min.js"></script>
 <script src="./javascript/lib/jquery-1.9.1.min.js"></script>

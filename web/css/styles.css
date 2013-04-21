@@ -6,7 +6,7 @@ html, body {
     margin-top: 20px;
     margin-left: auto;
     margin-right: auto;
-    width: 80%;
+    width: 100%;
     height: 20px;
 }
 
@@ -22,27 +22,39 @@ body {
     background-color: black;
 }
 
-dl {
-    color: white;
-    width: 60em;
-    font-family: sans-serif;
-    margin-left: auto;
-    margin-right: auto;
+#visualization {
+    float: left;
 }
 
-.starts-new-line {
-    clear: left;
+#control-panel {
+    width: 45%;
+    float: left;
+}
+
+#satellite-details {
+    width: 40%;
+    float: left;
+    margin-right: 10%;
+}
+
+#target-details {
+    width: 40%;
+    float: left;
+}
+
+dl {
+    color: white;
+    font-family: sans-serif;
 }
 
 dt {
+    color: grey;
+    clear: both;
     float: left;
-    background-color: blue;
 }
 
 dd {
-    float: left;
-    margin-right: 20px;
-    background-color: red;
+    float: right;
     -webkit-margin-start: 5px;
 }
 
