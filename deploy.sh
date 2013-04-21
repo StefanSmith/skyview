@@ -1,2 +1,1 @@
-cd web
-git push origin gh-pages
+cd gh-pages && git add . -A && git commit -m"$*" && git push origin gh-pages
