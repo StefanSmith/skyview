@@ -1,0 +1,63 @@
+html, body {
+    width: 100%
+}
+
+#slider {
+    margin-top: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    height: 20px;
+}
+
+#currentTime {
+    width: 100%;
+    text-align: center;
+    color: white;
+    font: 40px sans-serif;
+    padding-top: 25px;
+}
+
+body {
+    background-color: black;
+}
+
+#visualization {
+    float: left;
+}
+
+#control-panel {
+    width: 45%;
+    float: left;
+}
+
+#satellite-details {
+    width: 40%;
+    float: left;
+    margin-right: 10%;
+}
+
+#target-details {
+    width: 40%;
+    float: left;
+}
+
+dl {
+    color: white;
+    font-family: sans-serif;
+}
+
+dt {
+    color: grey;
+    clear: both;
+    float: left;
+}
+
+dd {
+    float: right;
+    -webkit-margin-start: 5px;
+}
+
+dt:after {
+    content: ":";
+}
