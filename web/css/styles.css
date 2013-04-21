@@ -2,7 +2,7 @@ html, body {
     width: 100%
 }
 
-#slider{
+#slider {
     margin-top: 20px;
     margin-left: auto;
     margin-right: auto;
@@ -10,6 +10,42 @@ html, body {
     height: 20px;
 }
 
+#currentTime {
+    width: 100%;
+    text-align: center;
+    color: white;
+    font: 40px sans-serif;
+    padding-top: 25px;
+}
+
 body {
     background-color: black;
+}
+
+dl {
+    color: white;
+    width: 60em;
+    font-family: sans-serif;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.starts-new-line {
+    clear: left;
+}
+
+dt {
+    float: left;
+    background-color: blue;
+}
+
+dd {
+    float: left;
+    margin-right: 20px;
+    background-color: red;
+    -webkit-margin-start: 5px;
+}
+
+dt:after {
+    content: ":";
 }

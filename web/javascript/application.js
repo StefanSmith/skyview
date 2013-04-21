@@ -1,5 +1,8 @@
 $(function () {
-    var camera, scene, renderer;
+    var camera, scene, renderer, rotationPaused;
+
+    rotationPaused = false;
+
 
     init();
     animate();
@@ -23,7 +26,6 @@ $(function () {
         var coneMesh;
 
         camera = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -2000, 1000);
-        camera.position.z = 500;
         camera.position.y = 100;
 
         scene = new THREE.Scene();
@@ -74,6 +76,8 @@ $(function () {
                 var target = targets[targetName];
                 drawTarget(target);
             });
+
+            renderer.render(scene, camera);
         });
 
         function initializeCone() {
@@ -110,6 +114,8 @@ $(function () {
             coneMesh.rotation.y = yRotation;
 //            console.log('Rotating on y: ' + yRotation * 180 / Math.PI);
 //            coneGeometry.applyMatrix(new THREE.Matrix4().makeRotationY(yRotation));
+
+            renderer.render(scene, camera);
         }
 
         $.getJSON('./data/observations.json', function (observations) {
@@ -120,15 +126,29 @@ $(function () {
             var firstObservationStartTime = sortedObservations.first().value();
             var lastObservationStartTime = sortedObservations.last().value();
 
+            function updateDisplayedObservationInformation(observation) {
+                $('#target').text(observation.target);
+                $('#rightAscension').text(observation.rightAscension);
+                $('#declination').text(observation.declination);
+                $('#startTime').text(moment.unix(observation.startTime).format('YYYY-MM-DD HH:mm:ss'));
+                $('#endTime').text(moment.unix(observation.endTime).format('YYYY-MM-DD HH:mm:ss'));
+                $('#revolution').text(observation.revolution);
+            }
+
             $("#slider").slider({
-                step: 86400,
+                step: 3600,
                 min: parseInt(firstObservationStartTime),
                 max: parseInt(lastObservationStartTime),
-                change: function (event, ui) {
+                start: pauseRotation,
+                stop: resumeRotation,
+                slide: function (event, ui) {
                     var currentSecondsSinceEpoch = ui.value;
+                    updateDisplayedCurrentTime(currentSecondsSinceEpoch);
                     var observation = _.find(observations, function (observation, startTime) {
-                        return startTime <= parseInt(currentSecondsSinceEpoch) && observation.endTime >= parseInt(currentSecondsSinceEpoch);
+                        return startTime <= currentSecondsSinceEpoch && observation.endTime >= currentSecondsSinceEpoch;
                     });
+
+                    updateDisplayedObservationInformation( observation);
 
                     if (!_.isUndefined(observation)) {
                         updateCone(observation);
@@ -136,6 +156,8 @@ $(function () {
                 }
             });
 
+            updateDisplayedCurrentTime(firstObservationStartTime);
+            updateDisplayedObservationInformation(observations[firstObservationStartTime]);
             updateCone(observations[firstObservationStartTime]);
         });
 
@@ -146,6 +168,19 @@ $(function () {
 
         document.body.appendChild(renderer.domElement);
 
+    }
+
+    function pauseRotation() {
+        rotationPaused = true;
+    }
+
+    function resumeRotation() {
+        rotationPaused = false;
+    }
+
+    function updateDisplayedCurrentTime(currentSecondsSinceEpoch) {
+        var date = moment.unix(currentSecondsSinceEpoch);
+        $('#currentTime').text(date.format('YYYY-MM-DD HH:mm'));
     }
 
     function getX(radius, theta, phi) {
@@ -160,17 +195,25 @@ $(function () {
         return -1 * radius * Math.sin(theta * Math.PI / 180) * Math.cos(phi * Math.PI / 180);
     }
 
+    var nextRotationIncrement = 0;
+
+    function getNextRotationIncrement() {
+        return nextRotationIncrement == 359 ? (nextRotationIncrement = 0) : (nextRotationIncrement = nextRotationIncrement + 1);
+    }
+
     function animate() {
 
         // note: three.js includes requestAnimationFrame shim
         requestAnimationFrame(animate);
 
+        if (rotationPaused) return;
+
         camera.lookAt(scene.position);
 
-        var timer = new Date().getTime() * 0.0005;
+        var timer = Math.PI / 180 * getNextRotationIncrement();
 
-        camera.position.x = Math.floor(Math.cos(timer) * 200);
-        camera.position.z = Math.floor(Math.sin(timer) * 200);
+        camera.position.x = Math.floor(Math.cos(timer) * 500);
+        camera.position.z = Math.floor(Math.sin(timer) * 500);
 
         renderer.render(scene, camera);
 

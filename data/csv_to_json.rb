@@ -12,12 +12,15 @@ CSV.read(ARGV[0]).each do |x|
     target = x[2]
     rightAscension = x[5]
     declination = x[6]
+    startTime = seconds_since_epoch(x[3]);
 
-    observations[seconds_since_epoch(x[3])] = {
+    observations[startTime] = {
         target: target,
+        startTime: startTime,
         endTime: seconds_since_epoch(x[4]),
         rightAscension: rightAscension,
-        declination: declination
+        declination: declination,
+        revolution: x[7]
     }
 
     if !targets.has_key? target
