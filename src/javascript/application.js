@@ -57,11 +57,11 @@ $(function () {
         renderer.render(scene, camera);
     }
 
-    function pauseRendering(){
+    function pauseRendering() {
         renderingPaused = true;
     }
 
-    function resumeRendering(){
+    function resumeRendering() {
         renderingPaused = false;
         renderScene();
     }
@@ -131,9 +131,16 @@ $(function () {
                 initializeCone();
             }
 
+            coneMesh.visible = true;
             coneMesh.rotation.z = -Math.PI / 180 * (90 - declination);
             coneMesh.rotation.y = Math.PI / 180 * (rightAscension);
 
+            renderScene();
+        }
+
+        function hideCone() {
+            if (_.isUndefined(coneMesh)) return;
+            coneMesh.visible = false;
             renderScene();
         }
 
@@ -144,6 +151,7 @@ $(function () {
 
             var firstObservationStartTime = sortedObservations.first().value();
             var lastObservationStartTime = sortedObservations.last().value();
+            var firstObservation = observations[firstObservationStartTime];
 
             function updateDisplayedObservationInformation(observation) {
                 $('#target').text(observation.target);
@@ -154,30 +162,192 @@ $(function () {
                 $('#revolution').text(observation.revolution);
             }
 
-            $("#slider").slider({
-                step: 3600,
-                min: parseInt(firstObservationStartTime),
-                max: parseInt(lastObservationStartTime),
+            function hideDisplayedObservationInformation() {
+                $('#target').text('No observation');
+                $('#rightAscension').text('No observation');
+                $('#declination').text('No observation');
+                $('#startTime').text('No observation');
+                $('#endTime').text('No observation');
+                $('#revolution').text('No observation');
+            }
+
+            var earliestObservationDate = moment.unix(firstObservationStartTime).toDate();
+            var latestObservationDate = moment.unix(lastObservationStartTime).toDate();
+
+            function updateMinuteSliderToDisplay(date) {
+                $("#minute-slider").slider('value', date.getHours() * 60 + date.getMinutes());
+            }
+
+            function updateMonthDaySliderToDisplay(date) {
+                $("#month-day-slider").slider('value', date.getDate());
+                $("#month-day-slider").slider('option', 'max', moment(date).daysInMonth());
+                updateMinuteSliderToDisplay(date);
+            }
+
+            function updateMonthSliderToDisplay(date) {
+                $("#month-slider").slider('value', date.getMonth() + 1);
+                updateMonthDaySliderToDisplay(date);
+            }
+
+            function updateYearSliderToDisplay(date) {
+                $("#year-slider").slider('value', date.getFullYear());
+                updateMonthSliderToDisplay(date);
+            }
+
+            var currentDate = earliestObservationDate;
+
+            $("#year-slider").slider({
+                value: earliestObservationDate.getFullYear(),
+                min: earliestObservationDate.getFullYear(),
+                max: latestObservationDate.getFullYear(),
                 start: pauseRotation,
                 stop: resumeRotation,
                 slide: function (event, ui) {
-                    var currentSecondsSinceEpoch = ui.value;
-                    updateDisplayedCurrentTime(currentSecondsSinceEpoch);
-                    var observation = _.find(observations, function (observation, startTime) {
-                        return startTime <= currentSecondsSinceEpoch && observation.endTime >= currentSecondsSinceEpoch;
-                    });
-
-                    updateDisplayedObservationInformation(observation);
-
-                    if (!_.isUndefined(observation)) {
-                        updateCone(observation);
-                    }
+                    var currentYear = ui.value;
+                    var currentYearIsEarliest = currentYear == earliestObservationDate.getFullYear();
+                    currentDate = currentYearIsEarliest ? earliestObservationDate : new Date(currentYear, 0, 1, 0, 0, 0);
+                    updateMonthSliderToDisplay(currentDate);
+                    updateDisplayTo(currentDate);
                 }
             });
 
-            updateDisplayedCurrentTime(firstObservationStartTime);
-            updateDisplayedObservationInformation(observations[firstObservationStartTime]);
-            updateCone(observations[firstObservationStartTime]);
+            $("#month-slider").slider({
+                value: 1,
+                min: 1,
+                max: 12,
+                start: pauseRotation,
+                stop: resumeRotation,
+                slide: function (event, ui) {
+                    var currentMonth = ui.value - 1;
+                    var currentYear = currentDate.getFullYear();
+                    var currentYearIsEarliestYear = currentYear == earliestObservationDate.getFullYear();
+
+                    var earliestMonth = earliestObservationDate.getMonth();
+
+                    if (currentYearIsEarliestYear && currentMonth < earliestMonth) {
+                        event.cancel();
+                        return;
+                    }
+
+                    var currentYearIsLatestYear = currentYear == latestObservationDate.getFullYear();
+
+                    if (currentYearIsLatestYear && currentMonth > latestObservationDate.getMonth()) {
+                        event.cancel();
+                        return;
+                    }
+
+                    var currentMonthIsEarliest = currentYearIsEarliestYear && currentMonth == earliestMonth;
+                    currentDate = currentMonthIsEarliest ? earliestObservationDate : new Date(currentYear, currentMonth, 1, 0, 0, 0);
+
+                    updateMonthDaySliderToDisplay(currentDate);
+                    updateDisplayTo(currentDate);
+                }
+            });
+
+            $("#month-day-slider").slider({
+                value: 1,
+                min: 1,
+                max: 31,
+                start: pauseRotation,
+                stop: resumeRotation,
+                slide: function (event, ui) {
+                    var currentDayOfMonth = ui.value;
+                    var currentYear = currentDate.getFullYear();
+                    var currentMonth = currentDate.getMonth();
+                    var currentYearAndMonthAreEarliest = currentYear == earliestObservationDate.getFullYear() && currentMonth == earliestObservationDate.getMonth();
+
+                    var earliestDayOfMonth = earliestObservationDate.getDate();
+
+                    if (currentYearAndMonthAreEarliest && currentDayOfMonth < earliestDayOfMonth) {
+                        event.cancel();
+                        return;
+                    }
+
+                    var currentYearAndMonthIsLatest = currentYear == latestObservationDate.getFullYear() && currentMonth == latestObservationDate.getMonth();
+
+                    if (currentYearAndMonthIsLatest && currentDayOfMonth > latestObservationDate.getDate()) {
+                        event.cancel();
+                        return;
+                    }
+
+                    var currentDayOfMonthIsEarliest = currentYearAndMonthAreEarliest && currentDayOfMonth == earliestDayOfMonth;
+                    currentDate = currentDayOfMonthIsEarliest ? earliestObservationDate : new Date(currentYear, currentMonth, currentDayOfMonth, 0, 0, 0);
+
+                    updateMinuteSliderToDisplay(currentDate);
+                    updateDisplayTo(currentDate);
+                }
+            });
+
+            function getMinuteOfDayOn(date) {
+                return date.getHours() * 60 + date.getMinutes();
+            }
+
+            $("#minute-slider").slider({
+                value: 0,
+                step: 10,
+                min: 0,
+                max: 1439,
+                start: pauseRotation,
+                stop: resumeRotation,
+                slide: function (event, ui) {
+                    var currentMinuteOfDay = ui.value;
+                    var currentYear = currentDate.getFullYear();
+                    var currentMonth = currentDate.getMonth();
+                    var currentDayOfMonth = currentDate.getDate();
+                    var currentDateIsEarliest = currentYear == earliestObservationDate.getFullYear()
+                        && currentMonth == earliestObservationDate.getMonth()
+                        && currentDayOfMonth == earliestObservationDate.getDate();
+
+                    var earliestMinuteOfDay = getMinuteOfDayOn(earliestObservationDate);
+
+                    if (currentDateIsEarliest && currentMinuteOfDay < earliestMinuteOfDay) {
+                        event.cancel();
+                        return;
+                    }
+
+                    var currentDateIsLatest = currentYear == latestObservationDate.getFullYear()
+                        && currentMonth == latestObservationDate.getMonth()
+                        && currentDayOfMonth == latestObservationDate.getDate();
+
+                    if (currentDateIsLatest && currentMinuteOfDay > getMinuteOfDayOn(latestObservationDate)) {
+                        event.cancel();
+                        return;
+                    }
+
+                    var currentMinuteOfDayIsEarliest = currentDateIsEarliest && currentMinuteOfDay == earliestMinuteOfDay;
+                    currentDate = currentMinuteOfDayIsEarliest ? earliestObservationDate : new Date(currentYear, currentMonth, currentDayOfMonth, Math.floor(currentMinuteOfDay / 60), currentMinuteOfDay % 60, 0);
+
+                    updateDisplayTo(currentDate);
+                }
+            });
+
+            function getObservationAt(currentDate) {
+                var currentSecondsSinceEpoch = currentDate.getTime() / 1000;
+                var observation = _.find(observations, function (observation, startTime) {
+                    return startTime <= currentSecondsSinceEpoch && currentSecondsSinceEpoch <= observation.endTime;
+                });
+                return observation;
+            }
+
+            function updateDisplayTo(currentDate) {
+                var observation;
+
+                updateDisplayedCurrentTimeTo(currentDate);
+                observation = getObservationAt(currentDate);
+
+                if (_.isUndefined(observation)) {
+                    hideCone();
+                    hideDisplayedObservationInformation();
+                } else {
+                    updateCone(observation);
+                    updateDisplayedObservationInformation(observation);
+                }
+            }
+
+            updateYearSliderToDisplay(currentDate);
+            updateDisplayedCurrentTimeTo(currentDate);
+            updateDisplayedObservationInformation(firstObservation);
+            updateCone(firstObservation);
         });
 
         scene.add(universe);
@@ -197,9 +367,8 @@ $(function () {
         rotationPaused = false;
     }
 
-    function updateDisplayedCurrentTime(currentSecondsSinceEpoch) {
-        var date = moment.unix(currentSecondsSinceEpoch);
-        $('#currentTime').text(date.format('HH:mm D MMM YYYY'));
+    function updateDisplayedCurrentTimeTo(date) {
+        $('#currentTime').text(moment(date).format('HH:mm D MMM YYYY'));
     }
 
     function getX(radius, theta, phi) {
