@@ -168,7 +168,8 @@ $(function () {
                 $('#declination').text('No observation');
                 $('#startTime').text('No observation');
                 $('#endTime').text('No observation');
-                $('#revolution').text('No observation   ');
+                $('#revolution').text('No observation   ' +
+                    '');
             }
 
             var earliestObservationDate = moment.unix(firstObservationStartTime).toDate();
